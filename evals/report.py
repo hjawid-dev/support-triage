@@ -65,6 +65,13 @@ def build_report(cases: list[dict], rows: list[dict], *, model: str, effort: str
     for language in sorted(by_language):
         lines.append(f"| {language} | {share(*tally(by_language[language], 'category'))} |")
 
+    # The emails tagged "hard" were written to be easy to get wrong, so they are shown on their own.
+    lines += ["", "## Emails with every field correct", "", "| Emails | Correct |", "|---|---|"]
+    for title, wanted in (("Standard", False), ("Hard", True)):
+        group = [row for row in graded if ("hard" in row["tags"]) == wanted]
+        correct = sum(1 for row in group if all(value is not False for value in row["grade"].values()))
+        lines.append(f"| {title} | {share(correct, len(group))} |")
+
     costs = [row["cost_usd"] for row in graded if row["cost_usd"] is not None]
     latencies = sorted(row["latency_s"] for row in graded)
     lines += ["", "## Cost and speed", ""]

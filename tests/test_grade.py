@@ -107,3 +107,7 @@ def test_report_lists_wrong_answers_and_counts_failures():
     assert "| sv-01 | Category | shipping_status | other |" in report
     assert "Not graded: 1 (errors 1" in report
     assert "Cost per 1,000 emails: $7.60" in report
+    standard = sum("hard" not in case["tags"] for case in CASES) - 1  # sv-02 failed and is not graded
+    hard = sum("hard" in case["tags"] for case in CASES)
+    assert f"| Standard | {standard - 1}/{standard} " in report
+    assert f"| Hard | {hard}/{hard} (100%) |" in report

@@ -39,8 +39,8 @@ def test_first_tag_is_the_language():
 def test_every_language_and_category_is_covered():
     languages = Counter(case["expected"]["language"] for case in CASES)
     categories = Counter(case["expected"]["category"] for case in CASES if case["expected"]["category"])
-    assert set(languages) == {"sv", "fi", "no", "da", "nl", "en"}
-    assert min(languages.values()) >= 8
+    assert set(languages) == {"sv", "fi", "no", "da", "nl", "en", "other"}
+    assert min(languages[code] for code in ("sv", "fi", "no", "da", "nl", "en")) >= 8
     assert set(categories) == {category.value for category in Category}
     assert min(categories.values()) >= 5
 
