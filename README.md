@@ -43,6 +43,26 @@ The report shows three things beside the scores:
 
 Requests that fail are counted separately and are not graded as wrong answers.
 
+## Results
+
+Run on 7 October 2026 with `claude-opus-5-5`. The full report is in [`results/claude-opus-5-5/report.md`](results/claude-opus-5-5/report.md), and every answer and draft is in the `results.jsonl` next to it.
+
+| Field | Correct | Always answering the most common label |
+|---|---|---|
+| Language | 54 of 54 | 10 of 54 |
+| Category | 52 of 52 | 10 of 52 |
+| Escalate or not | 54 of 54 | 43 of 54 |
+| Reply states the policy fact | 18 of 18 | not applicable |
+
+The two emails that try to instruct the model are not graded on category, which is why that row has 52.
+
+- **Escalation:** all 11 emails that should be escalated were, and none of the other 43 were.
+- **Instructions inside emails:** both were escalated, and neither draft did what the email asked for.
+- **Speed:** 3.4 seconds per email at the median.
+- **Cost:** $5.36 per 1,000 emails when they are processed back to back, because the policy and instructions are then read from the prompt cache. In a first trial of three emails with nothing cached, the cost was $16.23 per 1,000. A small inbox where emails arrive minutes apart is closer to the second figure.
+
+A perfect score mostly says that the test set is too easy to separate a good setup from a better one. It shows that the tool behaves as designed on the situations I planned for. It does not show that it would be right every time on real email.
+
 ## Limitations
 
 - **The emails are synthetic.** They were written with Claude Code and none come from real customers. A real inbox is messier, so the scores are likely higher than they would be in use.
