@@ -1,6 +1,6 @@
 """Triage one email from a file or from standard input.
 
-    python -m triage email.txt --market SE --subject "Where is my order?"
+python -m triage email.txt --market SE --subject "Where is my order?"
 """
 
 import argparse

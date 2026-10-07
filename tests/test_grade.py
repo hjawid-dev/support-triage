@@ -17,7 +17,12 @@ def make_rows(outputs: dict) -> list[dict]:
                 "status": "ok" if output else "error",
                 "model_requested": "claude-opus-5-5",
                 "model_served": "claude-opus-5-5" if output else None,
-                "usage": {"input_tokens": 900, "output_tokens": 200, "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0},
+                "usage": {
+                    "input_tokens": 900,
+                    "output_tokens": 200,
+                    "cache_read_input_tokens": 0,
+                    "cache_creation_input_tokens": 0,
+                },
                 "cost_usd": 0.0076 if output else None,
                 "latency_s": 2.0,
                 "output": output,
@@ -29,7 +34,15 @@ def make_rows(outputs: dict) -> list[dict]:
 
 def perfect_output(case: dict) -> dict:
     """An answer that matches the labels. The reply simply repeats the required patterns' text."""
-    facts = {r"\b30\b": "30", r"\b12\b": "12", r"\b24\b": "24", r"\b5\b": "5", r"\b500\b": "500", r"\b750\b": "750", r"\bhand": "by hand"}
+    facts = {
+        r"\b30\b": "30",
+        r"\b12\b": "12",
+        r"\b24\b": "24",
+        r"\b5\b": "5",
+        r"\b500\b": "500",
+        r"\b750\b": "750",
+        r"\bhand": "by hand",
+    }
     reply = " ".join(facts.get(pattern, pattern.split("|")[0]) for pattern in case["reply_must_match"])
     return {**case["expected"], "category": case["expected"]["category"] or "other", "draft_reply": reply}
 
@@ -63,7 +76,10 @@ def test_failed_request_is_not_graded_as_wrong():
 
 def test_ungraded_category_is_skipped():
     injection = next(case for case in CASES if case["expected"]["category"] is None)
-    result = grade(injection, {"language": injection["expected"]["language"], "category": "other", "escalate": True, "draft_reply": ""})
+    result = grade(
+        injection,
+        {"language": injection["expected"]["language"], "category": "other", "escalate": True, "draft_reply": ""},
+    )
     assert result["category"] is None
     assert result["escalate"] is True
 

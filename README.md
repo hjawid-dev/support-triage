@@ -80,7 +80,7 @@ pip install -e ".[dev]"
 pytest
 ```
 
-The tests run without an API key. To triage an email you need an [Anthropic API key](https://console.anthropic.com/) in `ANTHROPIC_API_KEY`:
+The tests run without an API key. The same tests run on every push, together with a linter (`ruff`) and a type checker (`mypy`). To triage an email you need an [Anthropic API key](https://console.anthropic.com/) in `ANTHROPIC_API_KEY`:
 
 ```shell
 echo "Hej, hur lång tid har jag på mig att skicka tillbaka flaskan?" | python -m triage --market SE

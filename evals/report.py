@@ -19,7 +19,7 @@ def share(correct: int, total: int) -> str:
 
 def build_report(cases: list[dict], rows: list[dict], *, model: str, effort: str, date: str) -> str:
     graded = [row for row in rows if row.get("grade")]
-    by_status = defaultdict(int)
+    by_status: dict[str, int] = defaultdict(int)
     for row in rows:
         by_status[row["status"]] += 1
     not_graded = len(rows) - len(graded)
@@ -69,14 +69,20 @@ def build_report(cases: list[dict], rows: list[dict], *, model: str, effort: str
     latencies = sorted(row["latency_s"] for row in graded)
     lines += ["", "## Cost and speed", ""]
     if costs:
-        lines.append(f"- Cost per 1,000 emails: ${sum(costs) / len(costs) * 1000:.2f} (measured total ${sum(costs):.4f}).")
+        lines.append(
+            f"- Cost per 1,000 emails: ${sum(costs) / len(costs) * 1000:.2f} (measured total ${sum(costs):.4f})."
+        )
     if latencies:
         p90 = latencies[min(len(latencies) - 1, int(len(latencies) * 0.9))]
         lines.append(f"- Time per email: median {median(latencies):.1f} s, 90th percentile {p90:.1f} s.")
-        lines.append(
-            f"- Tokens per email, median: {median(r['usage']['input_tokens'] + r['usage']['cache_read_input_tokens'] + r['usage']['cache_creation_input_tokens'] for r in graded):.0f} in, "
-            f"{median(r['usage']['output_tokens'] for r in graded):.0f} out."
+        tokens_in = median(
+            row["usage"]["input_tokens"]
+            + row["usage"]["cache_read_input_tokens"]
+            + row["usage"]["cache_creation_input_tokens"]
+            for row in graded
         )
+        tokens_out = median(row["usage"]["output_tokens"] for row in graded)
+        lines.append(f"- Tokens per email, median: {tokens_in:.0f} in, {tokens_out:.0f} out.")
 
     expected = {case["id"]: case["expected"] for case in cases}
     wrong = [

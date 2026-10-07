@@ -1,8 +1,8 @@
 """Runs every eval email through the triage and writes results and a report.
 
-    python -m evals.run --limit 3        # small paid trial first
-    python -m evals.run                  # all emails, default model
-    python -m evals.run --model claude-haiku-4-5
+python -m evals.run --limit 3        # small paid trial first
+python -m evals.run                  # all emails, default model
+python -m evals.run --model claude-haiku-4-5
 """
 
 import argparse

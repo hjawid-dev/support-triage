@@ -31,7 +31,9 @@ class FakeClient:
             stop_reason=stop_reason,
             parsed_output=parsed,
             model="claude-opus-5-5",
-            usage=SimpleNamespace(input_tokens=900, output_tokens=200, cache_read_input_tokens=None, cache_creation_input_tokens=None),
+            usage=SimpleNamespace(
+                input_tokens=900, output_tokens=200, cache_read_input_tokens=None, cache_creation_input_tokens=None
+            ),
         )
         self._error = error
         self.beta = SimpleNamespace(messages=SimpleNamespace(parse=self._parse))
@@ -48,7 +50,12 @@ def test_successful_triage():
     result = triage_email(client, EMAIL)
     assert result.status == "ok"
     assert result.triage == TRIAGE
-    assert result.usage == {"input_tokens": 900, "output_tokens": 200, "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0}
+    assert result.usage == {
+        "input_tokens": 900,
+        "output_tokens": 200,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+    }
     assert "Hur lång tid har jag på mig?" in client.request["messages"][0]["content"]
     assert client.request["output_format"] is Triage
 
@@ -93,7 +100,12 @@ def test_wrong_api_key_stops_the_run():
 
 
 def test_cost_uses_reported_tokens_and_list_price():
-    usage = {"input_tokens": 1_000_000, "output_tokens": 100_000, "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0}
+    usage = {
+        "input_tokens": 1_000_000,
+        "output_tokens": 100_000,
+        "cache_read_input_tokens": 0,
+        "cache_creation_input_tokens": 0,
+    }
     assert cost_usd("claude-opus-5-5", usage) == pytest.approx(4.00 + 2.00)
     assert cost_usd("claude-haiku-4-5", usage) == pytest.approx(1.00 + 0.50)
     assert cost_usd("some-other-model", usage) is None

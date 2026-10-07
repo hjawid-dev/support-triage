@@ -32,9 +32,7 @@ def grade(case: dict, output: dict | None) -> dict | None:
 
     patterns = case["reply_must_match"]
     reply = output.get("draft_reply", "")
-    grades["reply_facts"] = (
-        all(re.search(pattern, reply, re.IGNORECASE) for pattern in patterns) if patterns else None
-    )
+    grades["reply_facts"] = all(re.search(pattern, reply, re.IGNORECASE) for pattern in patterns) if patterns else None
     return grades
 
 

@@ -1,9 +1,9 @@
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class Language(str, Enum):
+class Language(StrEnum):
     sv = "sv"
     fi = "fi"
     no = "no"
@@ -13,7 +13,7 @@ class Language(str, Enum):
     other = "other"
 
 
-class Category(str, Enum):
+class Category(StrEnum):
     shipping_status = "shipping_status"
     return_exchange = "return_exchange"
     damaged_wrong_item = "damaged_wrong_item"
@@ -35,6 +35,8 @@ class Triage(BaseModel):
     language: Language = Field(description="Language the customer wrote in.")
     category: Category = Field(description="What the customer needs resolved first.")
     escalate: bool = Field(description="True when a person has to decide, per the escalation rules.")
-    escalate_reason: str = Field(description="Which escalation rule applies, in a few words. Empty when escalate is false.")
+    escalate_reason: str = Field(
+        description="Which escalation rule applies, in a few words. Empty when escalate is false."
+    )
     summary: str = Field(description="One sentence in English for the person handling the inbox.")
     draft_reply: str = Field(description="Reply to the customer, in the customer's language.")
