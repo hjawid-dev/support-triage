@@ -7,7 +7,7 @@ import httpx2
 import pytest
 
 from triage.classify import FALLBACK_BETA, triage_email
-from triage.models import cost_usd
+from triage.models import cost_usd, resolve
 from triage.schema import Category, Email, Language, Triage
 
 EMAIL = Email(market="SE", subject="Retur", body="Hur lång tid har jag på mig?")
@@ -109,3 +109,11 @@ def test_cost_uses_reported_tokens_and_list_price():
     assert cost_usd("claude-opus-5-5", usage) == pytest.approx(4.00 + 2.00)
     assert cost_usd("claude-haiku-4-5", usage) == pytest.approx(1.00 + 0.50)
     assert cost_usd("some-other-model", usage) is None
+
+
+def test_dated_snapshot_id_is_priced_as_its_model():
+    usage = {"input_tokens": 1_000_000, "output_tokens": 0}
+    assert cost_usd("claude-haiku-4-5-20251001", usage) == pytest.approx(1.00)
+    assert resolve("claude-haiku-4-5-20251001") == "claude-haiku-4-5"
+    assert resolve("claude-opus-5-5") == "claude-opus-5-5"
+    assert resolve("claude-opus-5") is None

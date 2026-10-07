@@ -106,6 +106,7 @@ def test_report_lists_wrong_answers_and_counts_failures():
     report = build_report(CASES, make_rows(outputs), model="claude-opus-5-5", effort="low", date="2026-01-01")
     assert "| sv-01 | Category | shipping_status | other |" in report
     assert "Not graded: 1 (errors 1" in report
+    assert "Answered by another model than the one requested: 0." in report
     assert "Cost per 1,000 emails: $7.60" in report
     standard = sum("hard" not in case["tags"] for case in CASES) - 1  # sv-02 failed and is not graded
     hard = sum("hard" in case["tags"] for case in CASES)

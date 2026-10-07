@@ -23,11 +23,22 @@ DEFAULT_MODEL = "claude-opus-5-5"
 CACHE_WRITE_MULTIPLIER = 1.25
 
 
+def resolve(model: str) -> str | None:
+    """Name in MODELS for a model id, or None when it is not one of them.
+
+    The API can answer with a dated snapshot id such as claude-haiku-4-5-20251001.
+    """
+    if model in MODELS:
+        return model
+    return next((name for name in MODELS if model.startswith(f"{name}-")), None)
+
+
 def cost_usd(model: str, usage: dict) -> float | None:
     """Cost of one request from the token counts the API reported. None for an unknown model."""
-    config = MODELS.get(model)
-    if config is None:
+    name = resolve(model)
+    if name is None:
         return None
+    config = MODELS[name]
     return (
         usage.get("input_tokens", 0) * config.input_per_mtok
         + usage.get("output_tokens", 0) * config.output_per_mtok

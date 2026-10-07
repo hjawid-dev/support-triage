@@ -3,6 +3,7 @@
 python -m evals.run --limit 3        # small paid trial first
 python -m evals.run                  # all emails, default model
 python -m evals.run --model claude-haiku-4-5
+python -m evals.run --model claude-haiku-4-5 --rebuild   # regrade saved answers, no API calls
 """
 
 import argparse
@@ -43,31 +44,53 @@ def run_case(client: anthropic.Anthropic, case: dict, model: str, effort: str) -
     }
 
 
+def write_run(out_dir: Path, cases: list[dict], rows: list[dict], run: dict) -> None:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    with open(out_dir / "results.jsonl", "w", encoding="utf-8") as handle:
+        for row in rows:
+            handle.write(json.dumps(row, ensure_ascii=False) + "\n")
+    (out_dir / "run.json").write_text(json.dumps(run, indent=2) + "\n", encoding="utf-8")
+    report = build_report(cases, rows, model=run["model"], effort=run["effort"], date=run["date"])
+    (out_dir / "report.md").write_text(report, encoding="utf-8")
+    print(report)
+    print(f"Saved to {out_dir}")
+
+
+def rebuild(out_dir: Path, cases: list[dict]) -> None:
+    """Regrade and reprice the saved answers of an earlier run. Makes no API calls."""
+    by_id = {case["id"]: case for case in cases}
+    run = json.loads((out_dir / "run.json").read_text(encoding="utf-8"))
+    with open(out_dir / "results.jsonl", encoding="utf-8") as handle:
+        rows = [json.loads(line) for line in handle if line.strip()]
+    for row in rows:
+        row["grade"] = grade(by_id[row["id"]], row["output"])
+        row["cost_usd"] = cost_usd(row["model_served"] or run["model"], row["usage"]) if row["usage"] else None
+    write_run(out_dir, [by_id[row["id"]] for row in rows], rows, run)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the triage eval. Every run makes paid API calls.")
     parser.add_argument("--model", default=DEFAULT_MODEL, choices=sorted(MODELS))
     parser.add_argument("--effort", default="low", choices=["low", "medium", "high"])
     parser.add_argument("--limit", type=int, help="Only run the first N emails.")
     parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--rebuild", action="store_true", help="Regrade the saved answers instead of calling the API.")
     args = parser.parse_args()
 
     cases = load_cases()[: args.limit]
-    client = make_client()
+    # A trial run gets its own folder so it does not overwrite a full run.
+    out_dir = RESULTS_DIR / (f"{args.model}-first-{args.limit}" if args.limit else args.model)
+    if args.rebuild:
+        rebuild(out_dir, cases)
+        return
 
+    client = make_client()
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
         rows = list(pool.map(lambda case: run_case(client, case, args.model, args.effort), cases))
 
-    # A trial run gets its own folder so it does not overwrite a full run.
-    out_dir = RESULTS_DIR / (f"{args.model}-first-{args.limit}" if args.limit else args.model)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    with open(out_dir / "results.jsonl", "w", encoding="utf-8") as handle:
-        for row in rows:
-            handle.write(json.dumps(row, ensure_ascii=False) + "\n")
-
-    report = build_report(cases, rows, model=args.model, effort=args.effort, date=date.today().isoformat())
-    (out_dir / "report.md").write_text(report, encoding="utf-8")
-    print(report)
-    print(f"Saved to {out_dir}")
+    # Haiku has no effort setting, so the report should not claim one was used.
+    effort = args.effort if MODELS[args.model].supports_effort else "not available for this model"
+    write_run(out_dir, cases, rows, {"model": args.model, "effort": effort, "date": date.today().isoformat()})
 
 
 if __name__ == "__main__":

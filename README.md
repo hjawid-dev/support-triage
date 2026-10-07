@@ -1,6 +1,6 @@
 # Support triage
 
-Reads a customer email to a small online store, sorts it, decides whether a person has to make a call on it, and drafts a reply in the customer's language. It comes with a test set of 54 emails in six languages that measures how often it gets this right and what it costs.
+Reads a customer email to a small online store, sorts it, decides whether a person has to make a call on it, and drafts a reply in the customer's language. It comes with a test set of 68 emails in six languages that measures how often it gets this right and what it costs, and the results for two models.
 
 ## Why I built it
 
@@ -31,9 +31,17 @@ For each email it returns:
 
 ## How it is measured
 
-[`evals/cases.jsonl`](evals/cases.jsonl) holds 54 emails with the expected language, category and escalation decision for each. They cover six languages and seven categories, and 11 of them should be escalated. Some are meant to be hard: very short messages, angry messages that should not be escalated, a customer writing Swedish to the Finnish store, two emails that try to give the model instructions.
+[`evals/cases.jsonl`](evals/cases.jsonl) holds 68 emails with the expected language, category and escalation decision for each. They cover six languages and seven categories, and 15 of them should be escalated.
 
-Each answer is graded field by field against the expected values. For 18 emails where the policy gives a number or a fact that answers the question, the draft reply is also checked for that fact.
+Fourteen of the emails are marked as hard. They were written to be easy to get wrong, usually as one half of a pair:
+
+- a return after three weeks, which is fine, next to one after six weeks, which is not
+- a customer ordering for the second time, which is not the same as writing for the second time
+- a polite request for compensation
+- an instruction to the model hidden in an email signature
+- an email in German, a language the store does not support
+
+Each answer is graded field by field against the expected values. For 20 emails where the policy gives a number or a fact that answers the question, the draft reply is also checked for that fact.
 
 The report shows three things beside the scores:
 
@@ -45,28 +53,37 @@ Requests that fail are counted separately and are not graded as wrong answers.
 
 ## Results
 
-Run on 7 October 2026 with `claude-opus-5-5`. The full report is in [`results/claude-opus-5-5/report.md`](results/claude-opus-5-5/report.md), and every answer and draft is in the `results.jsonl` next to it.
+Run on 7 October 2026 with the same prompt for both models. The full reports are in [`results/`](results), with every answer and draft in the `results.jsonl` files.
 
-| Field | Correct | Always answering the most common label |
-|---|---|---|
-| Language | 54 of 54 | 10 of 54 |
-| Category | 52 of 52 | 10 of 52 |
-| Escalate or not | 54 of 54 | 43 of 54 |
-| Reply states the policy fact | 18 of 18 | not applicable |
+| | `claude-opus-5-5` | `claude-haiku-4-5` | Always the most common label |
+|---|---|---|---|
+| Language | 68 of 68 | 57 of 68 | 13 of 68 |
+| Category | 64 of 64 | 64 of 64 | 12 of 64 |
+| Escalate or not | 68 of 68 | 65 of 68 | 53 of 68 |
+| Reply states the policy fact | 20 of 20 | 18 of 20 | not applicable |
+| Escalations caught | 15 of 15 | 12 of 15 | |
+| Hard emails with every field correct | 14 of 14 | 10 of 14 | |
+| Time per email, median | 3.5 s | 3.0 s | |
+| Cost per 1,000 emails | $6.26 | $2.40 | |
 
-The two emails that try to instruct the model are not graded on category, which is why that row has 52.
+Four emails are not graded on category, because more than one answer is defensible. That is why that row has 64.
 
-- **Escalation:** all 11 emails that should be escalated were, and none of the other 43 were.
-- **Instructions inside emails:** both were escalated, and neither draft did what the email asked for.
-- **Speed:** 3.4 seconds per email at the median.
-- **Cost:** $5.36 per 1,000 emails when they are processed back to back, because the policy and instructions are then read from the prompt cache. In a first trial of three emails with nothing cached, the cost was $16.23 per 1,000. A small inbox where emails arrive minutes apart is closer to the second figure.
+Opus got everything right, including the hard emails. Haiku sorted every email into the right category, but made three kinds of mistakes:
 
-A perfect score mostly says that the test set is too easy to separate a good setup from a better one. It shows that the tool behaves as designed on the situations I planned for. It does not show that it would be right every time on real email.
+- **It answered in the wrong language.** All 11 language errors were emails written in English to a non-English storefront. Haiku labelled them with the storefront's language, and in 10 of the 11 it wrote the reply in that language too.
+- **It missed 3 of 15 escalations.** Two were the emails that contain instructions to the model. Haiku did not follow the instructions, but it did not flag the emails either. The third was a lid that cracked two months after purchase, where Haiku told the customer no instead of leaving the decision to a person.
+- **It skipped a step in the policy.** One draft promised a replacement without asking for the photo the policy requires.
+
+Neither model escalated an email that did not need it.
+
+**What I take from this:** Opus stays the default. Haiku is cheaper, but a missed escalation is the expensive error here, and replying to a customer in the wrong language is a visible one. I have not tuned the prompt for Haiku. The language mistake in particular looks fixable with one more sentence in the instructions, which would be the next thing to try.
+
+**About the cost figures:** the Opus figure is for emails processed back to back, when the instructions are read from the prompt cache. In a first trial of three emails with nothing cached, Opus cost $16.23 per 1,000. A small inbox where emails arrive minutes apart is closer to that. Nothing was cached in the Haiku run, so its figure does not depend on timing.
 
 ## Limitations
 
 - **The emails are synthetic.** They were written with Claude Code and none come from real customers. A real inbox is messier, so the scores are likely higher than they would be in use.
-- **The test set is small.** With 54 emails, one wrong answer moves a score by about two percentage points, and each email is run once.
+- **The test set is small.** With 68 emails, one wrong answer moves a score by about one and a half percentage points. Each email is run once per model, so I do not know how much the results vary between runs.
 - **Reply quality is only partly measured.** The check covers whether the right policy fact is in the draft. Tone and overall correctness are left to the person approving it.
 - **It cannot see orders.** For "where is my order" it drafts a holding reply and leaves the lookup to a person.
 - **It is not connected to an inbox.** It reads an email from a file or from standard input.
@@ -93,7 +110,7 @@ python -m evals.run --limit 3
 python -m evals.run
 ```
 
-The default model is `claude-opus-5-5`. Pass `--model claude-haiku-4-5` or `--model claude-sonnet-5-5` to compare accuracy and cost between models. Results and the report are written to `results/`.
+The default model is `claude-opus-5-5`. Pass `--model claude-haiku-4-5` or `--model claude-sonnet-5-5` to run another one. Results and the report are written to `results/`. Add `--rebuild` to grade the saved answers again without calling the API, for example after changing the grading.
 
 ## What is in the repository
 

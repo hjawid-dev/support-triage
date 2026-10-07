@@ -3,6 +3,8 @@
 from collections import defaultdict
 from statistics import median
 
+from triage.models import resolve
+
 from .grade import GRADED_FIELDS, escalation_counts, majority_baseline, tally
 
 FIELD_TITLES = {
@@ -23,12 +25,12 @@ def build_report(cases: list[dict], rows: list[dict], *, model: str, effort: str
     for row in rows:
         by_status[row["status"]] += 1
     not_graded = len(rows) - len(graded)
-    other_model = sum(1 for row in graded if row["model_served"] != row["model_requested"])
+    other_model = sum(1 for row in graded if resolve(row["model_served"]) != row["model_requested"])
 
     lines = [
         f"# Eval report: {model}",
         "",
-        f"- Run on {date} with effort `{effort}`, {len(rows)} emails.",
+        f"- Run on {date}, {len(rows)} emails. Effort setting: {effort}.",
         f"- Graded: {len(graded)}. Not graded: {not_graded} "
         f"(errors {by_status['error']}, refusals {by_status['refusal']}, truncated {by_status['truncated']}).",
         f"- Answered by another model than the one requested: {other_model}.",
