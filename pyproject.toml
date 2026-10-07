@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "support-triage"
+version = "0.1.0"
+description = "Triage and reply drafts for a multilingual support inbox, with an eval set"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=1.11,<2",
+    "pydantic>=2.7,<3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+include = ["triage*", "evals*"]
+
+[tool.setuptools.package-data]
+triage = ["policy.md"]
+evals = ["cases.jsonl"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
