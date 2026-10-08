@@ -1,6 +1,6 @@
 # Support triage
 
-Reads a customer email to a small online store, sorts it, decides whether a person has to make a call on it, and drafts a reply in the customer's language. It comes with a test set of 68 emails in six languages that measures how often it gets this right and what it costs, and the results for two models.
+Reads a customer email to a small online store, sorts it, decides whether a person has to make a call on it, and drafts a reply in the customer's language. It comes with a test set of 68 emails, in the five market languages and English, that measures how often it gets this right and what it costs, and the results for two models.
 
 ## Why I built it
 
@@ -31,7 +31,7 @@ For each email it returns:
 
 ## How it is measured
 
-[`evals/cases.jsonl`](evals/cases.jsonl) holds 68 emails with the expected language, category and escalation decision for each. They cover six languages and seven categories, and 15 of them should be escalated.
+[`evals/cases.jsonl`](evals/cases.jsonl) holds 68 emails with the expected language, category and escalation decision for each. They cover the five market languages plus English and seven categories, and 15 of them should be escalated.
 
 Fourteen of the emails are marked as hard. They were written to be easy to get wrong, usually as one half of a pair:
 
